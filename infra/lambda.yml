@@ -1,0 +1,138 @@
+Description: >
+  This template is to create a lambda function that gets triggered by an Event bridge rule and
+  queries an external endpoint, processes the data as a csv and uploads to another S3 bucket
+
+Parameters:
+
+  EnvironmentName:
+    Description: An environment name that will be prefixed to resource names
+    Type: String
+    Default: BlueHarvest-Assessment 
+
+  Author:
+    Description: Name of the creator of the resources 
+    Type: String
+    Default: ahmad
+  
+  LambdaBucket:
+    Description: Name of the bucket that holds the layer zipfile
+    Type: String
+
+  LambdaZipFile:
+    Description: Name of the lambda zipfile object
+    Type: String
+  
+  TargetPrefix:
+    Description: Output storage path 
+    Type: String
+  
+  SecretName:
+    Description: Name of the API keys stored in SecretesManager
+    Type: String
+
+
+Resources:
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Architectures: 
+        - x86_64
+      FunctionName: !Join [ "-", [ BlueHarvest, !Ref AWS::Region, !Ref Author ]]
+      Runtime: python3.9
+      MemorySize: 2048
+      Timeout: 120
+      EphemeralStorage:
+        Size: 2048
+      PackageType: Zip
+      Handler: lambda_function.lambda_handler
+      Role: !GetAtt LambdaRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaBucket
+        S3Key: !Ref LambdaZipFile
+      Environment:
+        Variables:
+          BUCKET_NAME: !Ref TargetBucket
+          SECRET_NAME: !Ref SecretName 
+          REGION: !Ref AWS::Region
+          BUCKET_PREFIX: !Ref TargetPrefix
+      Layers: 
+        - arn:aws:lambda:us-east-1:336392948345:layer:AWSSDKPandas-Python39:8
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ "-", [ LambdaRole, !Ref AWS::Region , !Ref Author]]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 
+              - sts:AssumeRole
+      ManagedPolicyArns:
+           - arn:aws:iam::aws:policy/AmazonS3FullAccess
+      Policies:
+        - PolicyName: S3AccessPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:ListObject
+                  - s3:PutObject
+                  - s3:*
+                  - s3-object-lambda:*
+                Resource:
+                  - !GetAtt TargetBucket.Arn
+        - PolicyName: CloudwatchLogsPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: '*'
+        - PolicyName: SecretManagerPolicy
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - secretsmanager:GetSecretValue
+                  - secretsmanager:DescribeSecret
+                Resource: '*'
+              
+
+  TargetBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join [ "-", [ "blue-harvest-assessment", !Ref AWS::Region, !Ref Author ]]
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  EventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Join [ "-", [ EventBridgeRule, !Ref AWS::Region, !Ref Author ]]
+      Description: Trigger Lambda on a schedule every 8am daily
+      ScheduleExpression: cron(0 8 * * ? *) 
+      Targets: 
+        - Arn: !GetAtt LambdaFunction.Arn
+          Id: LambdaFunction
+      State: ENABLED
+  
+  PermissionForEventsToInvokeLambda:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref LambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt EventBridgeRule.Arn

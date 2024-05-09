@@ -1,0 +1,26 @@
+[
+    {
+        "ParameterKey": "EnvironmentName",
+        "ParameterValue": "BlueHarvest-Assessment"
+    },
+    {
+        "ParameterKey": "Author",
+        "ParameterValue": "ahmad"
+    },
+    {
+        "ParameterKey": "LambdaBucket",
+        "ParameterValue": "d2b-test"
+    },
+    {
+        "ParameterKey": "LambdaZipFile",
+        "ParameterValue": "lambda/lambda_function.zip"
+    },
+    {
+        "ParameterKey": "TargetPrefix",
+        "ParameterValue": "marvel/characters"
+    },
+    {
+        "ParameterKey": "SecretName",
+        "ParameterValue": "marvel-api-secret-keys"
+    }
+]
