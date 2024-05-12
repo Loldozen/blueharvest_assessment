@@ -4,7 +4,7 @@ import asyncio
 import base64
 import boto3
 from botocore.exceptions import ClientError
-from helper.get_marvel_characters import main
+from utils.get_marvel_characters import main
 
 SECRET_NAME = os.environ.get('SECRET_NAME')
 REGION_NAME = os.environ.get('REGION_NAME')

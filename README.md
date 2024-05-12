@@ -10,7 +10,7 @@ An AWS EventBridge rule is created to trigger the lambda function
 The infrastructure design is displayed below:
 
 ![Architecture diagram]
-![architecture_diagram](https://github.com/Loldozen/blueharvest_assessment/assets/56772631/a608c7af-fbb0-413a-b68a-50be0e0d22c7)
+![architecture_diagram](https://github.com/Loldozen/blueharvest_assessment/assets/56772631/0b5bb5a6-bd59-46a4-9625-51ca24dbe473)
 
 
 ## Retrieve code
@@ -31,8 +31,9 @@ The infrastructure design is displayed below:
 
 ~~~ 
 # Ensure that the AWS CLI is configured before runniing the command below
+# Check the region in the create.sh and update.sh file
+# Edit the profile flag in the create.sh and update.sh to your local AWS CLI profile configured
 # Create the infrastructure
-# Check the region in the create.sh file
 
 cd ./infra
 
